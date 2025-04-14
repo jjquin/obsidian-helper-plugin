@@ -1,0 +1,51 @@
+name: Build Helpers Plugin
+
+on:
+  push:
+    paths:
+      - 'main.ts'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install -g esbuild typescript
+
+      - name: Create plugin folder
+        run: mkdir -p helpers-plugin
+
+      - name: Compile TypeScript to JavaScript
+        run: esbuild main.ts --bundle --platform=node --outfile=helpers-plugin/main.js
+
+      - name: Add manifest and styles
+        run: |
+          echo '{
+            "id": "helpers-plugin",
+            "name": "Helpers Plugin",
+            "version": "1.0.0",
+            "minAppVersion": "0.15.0",
+            "description": "Reusable helper functions for Obsidian scripts",
+            "author": "Your Name",
+            "authorUrl": "",
+            "isDesktopOnly": true
+          }' > helpers-plugin/manifest.json
+
+          echo '' > helpers-plugin/styles.css
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add helpers-plugin
+          git commit -m "Build plugin" || echo "No changes to commit"
+          git push
