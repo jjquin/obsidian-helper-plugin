@@ -1,4 +1,4 @@
-// main.ts — Helpers Plugin for Obsidian
+// main.ts — Helpers Plugin for Obsidian - test for workflow compile
 import { Plugin } from "obsidian";
 
 export default class HelpersPlugin extends Plugin {
