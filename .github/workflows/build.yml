@@ -25,7 +25,7 @@ jobs:
         run: mkdir -p helpers-plugin
 
       - name: Compile TypeScript to JavaScript
-        run: esbuild main.ts --bundle --platform=node --outfile=helpers-plugin/main.js
+        run: esbuild main.ts --bundle --platform=node --external:obsidian --outfile=helpers-plugin/main.js
 
       - name: Add manifest and styles
         run: |
