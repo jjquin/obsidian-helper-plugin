@@ -1,4 +1,4 @@
-name: Build Helpers Plugin
+name: Build and Release Helpers Plugin
 
 on:
   push:
@@ -6,11 +6,13 @@ on:
       - 'main.ts'
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to publish release
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -18,13 +20,13 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: Install build tools
         run: npm install -g esbuild typescript
 
       - name: Create plugin folder
         run: mkdir -p helpers-plugin
 
-      - name: Compile TypeScript to JavaScript
+      - name: Compile TypeScript
         run: esbuild main.ts --bundle --platform=node --external:obsidian --outfile=helpers-plugin/main.js
 
       - name: Add manifest and styles
@@ -42,10 +44,12 @@ jobs:
 
           echo '' > helpers-plugin/styles.css
 
-      - name: Commit changes
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add helpers-plugin
-          git commit -m "Build plugin" || echo "No changes to commit"
-          git push
+      - name: Zip compiled plugin
+        run: zip -r helpers-plugin.zip helpers-plugin
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Helpers Plugin v1.0.0
+          tag_name: v1.0.0
+          files: helpers-plugin.zip
