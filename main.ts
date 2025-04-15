@@ -121,7 +121,7 @@ export default class HelpersPlugin extends Plugin {
             if (leaf.view?.file?.path === path) {
                 app.workspace.setActiveLeaf(leaf, true);
                 const editor = leaf.view?.editor;
-                if (editor) editor.cm.focus(); // ✅ Focus editor
+                if (editor) editor.cm.focus(); // Safe if already open
                 return;
             }
         }
@@ -133,15 +133,12 @@ export default class HelpersPlugin extends Plugin {
             await newLeaf.openFile(file);
             app.workspace.setActiveLeaf(newLeaf, true);
 
+            // Wait for view to fully initialize before interacting
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             const view = newLeaf.view;
-
-            // ✅ Force preview editing mode
-            if (view?.getMode && view.getMode() !== "preview") {
-                view.setMode?.("preview");
-            }
-
             const editor = view?.editor;
-            if (editor) editor.cm.focus(); // ✅ Focus editor after open
+            if (editor) editor.cm.focus(); // Safe after short delay
         } else {
             new Notice(`File not found: ${path}`);
         }
