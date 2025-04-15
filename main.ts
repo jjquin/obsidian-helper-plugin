@@ -1,16 +1,17 @@
-// main.ts — Helpers Plugin for Obsidian 
+// main.ts — Helpers Plugin for Obsidian
 import { Plugin } from "obsidian";
 
 export default class HelpersPlugin extends Plugin {
     async onload() {
         console.log("Helpers Plugin loaded");
 
-        // Make helpers globally accessible
+        // Expose helper functions globally
         (this.app as any).plugins.plugins["helpers-plugin"] = {
             sanitizeTime: this.sanitizeTime.bind(this),
             formatLink: this.formatLink.bind(this),
             moveFile: this.moveFile.bind(this),
             calculateDuration: this.calculateDuration.bind(this),
+            createUniqueId: this.createUniqueId.bind(this),
         };
     }
 
@@ -85,20 +86,4 @@ export default class HelpersPlugin extends Plugin {
     }
 
     // === Helper: Calculate Duration ===
-    calculateDuration(startDate: string, startTime: string, endDate: string, endTime: string): string {
-        const moment = (window as any).moment;
-
-        const startDateTime = moment(`${startDate} ${startTime}`, "YYYY-MM-DD HH:mm");
-        let endDateTime = moment(`${endDate} ${endTime}`, "YYYY-MM-DD HH:mm");
-
-        if (endDateTime.isBefore(startDateTime)) {
-            endDateTime = endDateTime.add(1, "day");
-        }
-
-        const durationMinutes = endDateTime.diff(startDateTime, "minutes");
-        const hours = Math.floor(durationMinutes / 60);
-        const minutes = durationMinutes % 60;
-
-        return `${hours}:${minutes.toString().padStart(2, "0")}`;
-    }
-}
+    calculateDuration(startDate: string, startTime: string
