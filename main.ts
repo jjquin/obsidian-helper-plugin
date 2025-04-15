@@ -5,7 +5,6 @@ export default class HelpersPlugin extends Plugin {
     async onload() {
         console.log("Helpers Plugin loaded");
 
-        // Expose helper functions globally
         (this.app as any).plugins.plugins["helpers-plugin"] = {
             sanitizeTime: this.sanitizeTime.bind(this),
             formatLink: this.formatLink.bind(this),
@@ -20,7 +19,6 @@ export default class HelpersPlugin extends Plugin {
         delete (this.app as any).plugins.plugins["helpers-plugin"];
     }
 
-    // === Helper: Sanitize Time ===
     sanitizeTime(inputTime: string): string {
         const moment = (window as any).moment;
         const currentTime = moment().format("HH:mm");
@@ -30,7 +28,6 @@ export default class HelpersPlugin extends Plugin {
             : momentTime.format("HH:mm");
     }
 
-    // === Helper: Format Link ===
     formatLink(value: string): string {
         const app = this.app;
         const file = app.metadataCache.getFirstLinkpathDest(value, "");
@@ -42,7 +39,6 @@ export default class HelpersPlugin extends Plugin {
         return `[[${file.basename}]]`;
     }
 
-    // === Helper: Move File ===
     async moveFile(currentPath: string, newTitle: string, newFolder: string): Promise<string | null> {
         const app = this.app;
         const abstractFile = app.vault.getAbstractFileByPath(currentPath);
@@ -52,7 +48,6 @@ export default class HelpersPlugin extends Plugin {
             return null;
         }
 
-        // Clean the title
         let cleanedTitle = newTitle
             .replace(/&/g, "n")
             .replace(/'/g, "")
@@ -85,5 +80,35 @@ export default class HelpersPlugin extends Plugin {
         }
     }
 
-    // === Helper: Calculate Duration ===
-    calculateDuration(startDate: string, startTime: string
+    calculateDuration(startDate: string, startTime: string, endDate: string, endTime: string): string {
+        const moment = (window as any).moment;
+        const startDateTime = moment(`${startDate} ${startTime}`, "YYYY-MM-DD HH:mm");
+        let endDateTime = moment(`${endDate} ${endTime}`, "YYYY-MM-DD HH:mm");
+
+        if (endDateTime.isBefore(startDateTime)) {
+            endDateTime = endDateTime.add(1, "day");
+        }
+
+        const durationMinutes = endDateTime.diff(startDateTime, "minutes");
+        const hours = Math.floor(durationMinutes / 60);
+        const minutes = durationMinutes % 60;
+
+        return `${hours}:${minutes.toString().padStart(2, "0")}`;
+    }
+
+    createUniqueId(prefix?: string): string {
+        const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let num = (window as any).moment().format('X');
+        let result = "";
+
+        do {
+            result = chars[num % 62] + result;
+            num = Math.floor(num / 62);
+        } while (num > 0);
+
+        const idPart = result;
+        const prefixPart = prefix ? `${prefix}-` : "";
+
+        return `🆔 ${prefixPart}${idPart}`;
+    }
+}
