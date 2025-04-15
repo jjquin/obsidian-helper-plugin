@@ -1,5 +1,5 @@
 // main.ts — Helpers Plugin for Obsidian
-import { Plugin } from "obsidian";
+import { Plugin, Notice } from "obsidian";
 
 export default class HelpersPlugin extends Plugin {
     async onload() {
@@ -10,7 +10,8 @@ export default class HelpersPlugin extends Plugin {
             formatLink: this.formatLink.bind(this),
             moveFile: this.moveFile.bind(this),
             calculateDuration: this.calculateDuration.bind(this),
-            createUniqueId: this.createUniqueId.bind(this)
+            createUniqueId: this.createUniqueId.bind(this),
+            openFileInTab: this.openFileInTab.bind(this) // ✅ updated name
         };
     }
 
@@ -110,5 +111,26 @@ export default class HelpersPlugin extends Plugin {
         const prefixPart = prefix ? `${prefix}-` : "";
 
         return `🆔 ${prefixPart}${idPart}`;
+    }
+
+    async openFileInTab(path: string): Promise<void> {
+        const app = this.app;
+        const leafs = app.workspace.getLeavesOfType("markdown");
+
+        for (const leaf of leafs) {
+            if (leaf.view?.file?.path === path) {
+                app.workspace.setActiveLeaf(leaf, true);
+                return;
+            }
+        }
+
+        const newLeaf = app.workspace.getLeaf();
+        const file = app.vault.getAbstractFileByPath(path);
+        if (file) {
+            await newLeaf.openFile(file);
+            app.workspace.setActiveLeaf(newLeaf, true);
+        } else {
+            new Notice(`File not found: ${path}`);
+        }
     }
 }
