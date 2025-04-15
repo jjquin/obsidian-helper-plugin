@@ -11,7 +11,7 @@ export default class HelpersPlugin extends Plugin {
             moveFile: this.moveFile.bind(this),
             calculateDuration: this.calculateDuration.bind(this),
             createUniqueId: this.createUniqueId.bind(this),
-            openFileInTab: this.openFileInTab.bind(this) // ✅ updated name
+            openFileInTab: this.openFileInTab.bind(this)
         };
     }
 
@@ -120,15 +120,28 @@ export default class HelpersPlugin extends Plugin {
         for (const leaf of leafs) {
             if (leaf.view?.file?.path === path) {
                 app.workspace.setActiveLeaf(leaf, true);
+                const editor = leaf.view?.editor;
+                if (editor) editor.cm.focus(); // ✅ Focus editor
                 return;
             }
         }
 
         const newLeaf = app.workspace.getLeaf();
         const file = app.vault.getAbstractFileByPath(path);
+
         if (file) {
             await newLeaf.openFile(file);
             app.workspace.setActiveLeaf(newLeaf, true);
+
+            const view = newLeaf.view;
+
+            // ✅ Force preview editing mode
+            if (view?.getMode && view.getMode() !== "preview") {
+                view.setMode?.("preview");
+            }
+
+            const editor = view?.editor;
+            if (editor) editor.cm.focus(); // ✅ Focus editor after open
         } else {
             new Notice(`File not found: ${path}`);
         }
