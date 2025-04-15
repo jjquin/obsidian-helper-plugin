@@ -1,4 +1,4 @@
-// main.ts — Helpers Plugin for Obsidian
+// main.ts — Helpers Plugin for Obsidian quickadd scripts and templater templates
 import { Plugin } from "obsidian";
 
 export default class HelpersPlugin extends Plugin {
