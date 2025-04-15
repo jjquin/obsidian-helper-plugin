@@ -10,7 +10,7 @@ export default class HelpersPlugin extends Plugin {
             formatLink: this.formatLink.bind(this),
             moveFile: this.moveFile.bind(this),
             calculateDuration: this.calculateDuration.bind(this),
-            createUniqueId: this.createUniqueId.bind(this),
+            createUniqueId: this.createUniqueId.bind(this)
         };
     }
 
