@@ -126,7 +126,7 @@ export default class HelpersPlugin extends Plugin {
             }
         }
 
-        const newLeaf = app.workspace.getLeaf();
+        const newLeaf = app.workspace.getLeaf("tab"); // ✅ restored to open in a new tab
         const file = app.vault.getAbstractFileByPath(path);
 
         if (file) {
