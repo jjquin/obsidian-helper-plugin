@@ -1,7 +1,7 @@
 {
   "id": "helpers-plugin",
   "name": "Helpers Plugin",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "minAppVersion": "0.15.0",
   "description": "Reusable helper functions for Obsidian scripts",
   "author": "JJ Quin",
