@@ -20,34 +20,28 @@ jobs:
       - name: Install esbuild
         run: npm install -g esbuild
 
-      - name: Read version from manifest.json
+      - name: Read version from helpers-plugin/manifest.json
         id: get_version
         run: |
-          VERSION=$(jq -r '.version' manifest.json)
+          VERSION=$(jq -r '.version' helpers-plugin/manifest.json)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Build main.ts
+      - name: Build main.ts to helpers-plugin/main.js
         run: |
-          mkdir -p helpers-plugin
           esbuild main.ts --bundle --platform=node --external:obsidian --outfile=helpers-plugin/main.js
 
-      - name: Copy manifest and styles
-        run: |
-          cp manifest.json helpers-plugin/
-          cp styles.css helpers-plugin/
-
-      - name: Commit helpers-plugin folder to repo
+      - name: Commit updated main.js to helpers-plugin/
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add helpers-plugin
-          git commit -m "Update helpers-plugin folder for v${{ steps.get_version.outputs.version }}" || echo "No changes to commit"
+          git add helpers-plugin/main.js
+          git commit -m "Update main.js in helpers-plugin for v${{ steps.get_version.outputs.version }}" || echo "No changes to commit"
           git push
 
-      - name: Zip helpers-plugin folder
+      - name: Create plugin zip file
         run: |
           cd helpers-plugin
-          zip -r ../helpers-plugin.zip ./*
+          zip -r ../helpers-plugin.zip main.js manifest.json styles.css
           cd ..
 
       - name: Create GitHub Release
