@@ -29,6 +29,7 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
     this.app.plugins.plugins["helpers-plugin"] = {
       sanitizeTime: this.sanitizeTime.bind(this),
       formatLink: this.formatLink.bind(this),
+      formatWebLink: this.formatWebLink.bind(this),
       moveFile: this.moveFile.bind(this),
       calculateDuration: this.calculateDuration.bind(this),
       createUniqueId: this.createUniqueId.bind(this),
@@ -50,11 +51,32 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
     const app = this.app;
     const file = app.metadataCache.getFirstLinkpathDest(value, "");
     if (!file) return `[[${value}]]`;
+    const extension = file.extension?.toLowerCase();
+    if (extension !== "md") {
+      const isImage = ["png", "jpg", "jpeg", "gif", "svg"].includes(extension);
+      const prefix = isImage ? "!" : "";
+      return `${prefix}[[${file.name}]]`;
+    }
     const title = app.metadataCache.getFileCache(file)?.frontmatter?.Title;
     if (title && title.trim() && title !== file.basename) {
       return `[[${file.basename}|${title}]]`;
     }
     return `[[${file.basename}]]`;
+  }
+  formatWebLink(url) {
+    if (!url) return "";
+    try {
+      const cleanUrl = url.startsWith("http") ? url : `https://${url}`;
+      const parsed = new URL(cleanUrl);
+      let hostname = parsed.hostname.replace(/^www\./, "");
+      const parts = hostname.split(".");
+      const domain = parts.length > 2 ? parts.slice(-2, -1)[0] : parts[0];
+      const displayName = domain.charAt(0).toUpperCase() + domain.slice(1);
+      return `[${displayName}](${url})`;
+    } catch (e) {
+      console.warn("Invalid URL passed to formatWebLink:", url);
+      return url;
+    }
   }
   async moveFile(currentPath, newTitle, newFolder) {
     const app = this.app;
