@@ -1,5 +1,5 @@
 // main.ts — Helpers Plugin for Obsidian
-import { Plugin, Notice, TFile } from "obsidian";
+import { Plugin, Notice } from "obsidian";
 
 export default class HelpersPlugin extends Plugin {
     async onload() {
@@ -12,8 +12,7 @@ export default class HelpersPlugin extends Plugin {
                 calculateDuration: this.calculateDuration.bind(this),
                 createUniqueId: this.createUniqueId.bind(this),
                 openFileInTab: this.openFileInTab.bind(this),
-                getTagFromFolder: this.getTagFromFolder.bind(this),
-                writeFrontmatterProperties: this.writeFrontmatterProperties.bind(this)
+                getNoteType: this.getNoteType.bind(this)
         };
     }
 
@@ -123,7 +122,7 @@ export default class HelpersPlugin extends Plugin {
             if (leaf.view?.file?.path === path) {
                 app.workspace.setActiveLeaf(leaf, true);
                 const editor = leaf.view?.editor;
-                if (editor) editor.cm.focus(); // Safe if already open
+                if (editor) editor.cm.focus();
                 return;
             }
         }
@@ -134,41 +133,36 @@ export default class HelpersPlugin extends Plugin {
         if (file) {
             await newLeaf.openFile(file);
             app.workspace.setActiveLeaf(newLeaf, true);
+
             await new Promise(resolve => setTimeout(resolve, 100));
             const view = newLeaf.view;
             const editor = view?.editor;
-            if (editor) editor.cm.focus(); // Safe after short delay
+            if (editor) editor.cm.focus();
         } else {
             new Notice(`File not found: ${path}`);
         }
     }
 
-    async getTagFromFolder(folderPath: string): Promise<string | null> {
-        try {
-            const file = this.app.vault.getAbstractFileByPath("Toolbox/Lookups/noteTypeOptions.json");
-            if (!file || !file.path.endsWith(".json")) return null;
-
-            const content = await this.app.vault.read(file);
-            const noteTypes = JSON.parse(content).noteTypes;
-            const match = noteTypes.find((nt: any) => nt.folder === folderPath);
-            return match?.tag ?? null;
-        } catch (err) {
-            console.error("Error in getTagFromFolder:", err);
+    async getNoteType(key: string, value: string): Promise<any | null> {
+        const file = this.app.vault.getAbstractFileByPath("Toolbox/Lookups/noteTypeOptions.json");
+        if (!file) {
+            new Notice("noteTypeOptions.json not found.");
             return null;
         }
-    }
 
-    async writeFrontmatterProperties(file: TFile, props: Record<string, any>): Promise<void> {
         try {
-            await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-                for (const [key, value] of Object.entries(props)) {
-                    if (value !== null || (value === null && !(key in frontmatter))) {
-                        frontmatter[key] = value;
-                    }
-                }
-            });
+            const content = await this.app.vault.read(file);
+            const noteTypes = JSON.parse(content)?.noteTypes;
+            if (!Array.isArray(noteTypes)) {
+                new Notice("noteTypeOptions.json is not formatted correctly.");
+                return null;
+            }
+
+            return noteTypes.find((item: any) => item[key] === value) || null;
         } catch (err) {
-            console.error("Error in writeFrontmatterProperties:", err);
+            console.error("Failed to read or parse noteTypeOptions.json", err);
+            new Notice("Error reading note type options.");
+            return null;
         }
     }
 }
