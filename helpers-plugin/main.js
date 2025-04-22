@@ -33,8 +33,7 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
       calculateDuration: this.calculateDuration.bind(this),
       createUniqueId: this.createUniqueId.bind(this),
       openFileInTab: this.openFileInTab.bind(this),
-      getTagFromFolder: this.getTagFromFolder.bind(this),
-      writeFrontmatterProperties: this.writeFrontmatterProperties.bind(this)
+      getNoteType: this.getNoteType.bind(this)
     };
   }
   onunload() {
@@ -135,30 +134,24 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
       new import_obsidian.Notice(`File not found: ${path}`);
     }
   }
-  async getTagFromFolder(folderPath) {
-    try {
-      const file = this.app.vault.getAbstractFileByPath("Toolbox/Lookups/noteTypeOptions.json");
-      if (!file || !file.path.endsWith(".json")) return null;
-      const content = await this.app.vault.read(file);
-      const noteTypes = JSON.parse(content).noteTypes;
-      const match = noteTypes.find((nt) => nt.folder === folderPath);
-      return match?.tag ?? null;
-    } catch (err) {
-      console.error("Error in getTagFromFolder:", err);
+  async getNoteType(key, value) {
+    const file = this.app.vault.getAbstractFileByPath("Toolbox/Lookups/noteTypeOptions.json");
+    if (!file) {
+      new import_obsidian.Notice("noteTypeOptions.json not found.");
       return null;
     }
-  }
-  async writeFrontmatterProperties(file, props) {
     try {
-      await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-        for (const [key, value] of Object.entries(props)) {
-          if (value !== null || value === null && !(key in frontmatter)) {
-            frontmatter[key] = value;
-          }
-        }
-      });
+      const content = await this.app.vault.read(file);
+      const noteTypes = JSON.parse(content)?.noteTypes;
+      if (!Array.isArray(noteTypes)) {
+        new import_obsidian.Notice("noteTypeOptions.json is not formatted correctly.");
+        return null;
+      }
+      return noteTypes.find((item) => item[key] === value) || null;
     } catch (err) {
-      console.error("Error in writeFrontmatterProperties:", err);
+      console.error("Failed to read or parse noteTypeOptions.json", err);
+      new import_obsidian.Notice("Error reading note type options.");
+      return null;
     }
   }
 };
