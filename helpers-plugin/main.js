@@ -32,7 +32,9 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
       moveFile: this.moveFile.bind(this),
       calculateDuration: this.calculateDuration.bind(this),
       createUniqueId: this.createUniqueId.bind(this),
-      openFileInTab: this.openFileInTab.bind(this)
+      openFileInTab: this.openFileInTab.bind(this),
+      getTagFromFolder: this.getTagFromFolder.bind(this),
+      writeFrontmatterProperties: this.writeFrontmatterProperties.bind(this)
     };
   }
   onunload() {
@@ -131,6 +133,32 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
       if (editor) editor.cm.focus();
     } else {
       new import_obsidian.Notice(`File not found: ${path}`);
+    }
+  }
+  async getTagFromFolder(folderPath) {
+    try {
+      const file = this.app.vault.getAbstractFileByPath("Toolbox/Lookups/noteTypeOptions.json");
+      if (!file || !file.path.endsWith(".json")) return null;
+      const content = await this.app.vault.read(file);
+      const noteTypes = JSON.parse(content).noteTypes;
+      const match = noteTypes.find((nt) => nt.folder === folderPath);
+      return match?.tag ?? null;
+    } catch (err) {
+      console.error("Error in getTagFromFolder:", err);
+      return null;
+    }
+  }
+  async writeFrontmatterProperties(file, props) {
+    try {
+      await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+        for (const [key, value] of Object.entries(props)) {
+          if (value !== null || value === null && !(key in frontmatter)) {
+            frontmatter[key] = value;
+          }
+        }
+      });
+    } catch (err) {
+      console.error("Error in writeFrontmatterProperties:", err);
     }
   }
 };
