@@ -34,22 +34,22 @@ export default class HelpersPlugin extends Plugin {
     formatLink(value: string): string {
         const app = this.app;
         const file = app.metadataCache.getFirstLinkpathDest(value, "");
-        if (!file) return `[[${value}]]`;
+        if (!file) return `"[[${value}]]"`;
 
         const extension = file.extension?.toLowerCase();
 
         if (extension !== "md") {
             const isImage = ["png", "jpg", "jpeg", "gif", "svg"].includes(extension);
             const prefix = isImage ? "!" : "";
-            return `${prefix}[[${file.name}]]`;
+            return `"${prefix}[[${file.name}]]"`;
         }
 
         const title = app.metadataCache.getFileCache(file)?.frontmatter?.Title;
         if (title && title.trim() && title !== file.basename) {
-            return `[[${file.basename}|${title}]]`;
+            return `"[[${file.basename}|${title}]]"`;
         }
 
-        return `[[${file.basename}]]`;
+        return `"[[${file.basename}]]"`;
     }
 
     formatWebLink(url: string): string {
@@ -64,7 +64,7 @@ export default class HelpersPlugin extends Plugin {
             const domain = parts.length > 2 ? parts.slice(-2, -1)[0] : parts[0];
             const displayName = domain.charAt(0).toUpperCase() + domain.slice(1);
 
-            return `[${displayName}](${url})`;
+            return `"[${displayName}](${url})"`;
         } catch (e) {
             console.warn("Invalid URL passed to formatWebLink:", url);
             return url;
