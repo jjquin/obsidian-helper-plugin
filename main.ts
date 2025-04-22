@@ -128,16 +128,13 @@ export default class HelpersPlugin extends Plugin {
             }
         }
 
-        const newLeaf = app.workspace.getLeaf("tab"); // ✅ restored to open in a new tab
+        const newLeaf = app.workspace.getLeaf("tab");
         const file = app.vault.getAbstractFileByPath(path);
 
         if (file) {
             await newLeaf.openFile(file);
             app.workspace.setActiveLeaf(newLeaf, true);
-
-            // Wait for view to fully initialize before interacting
             await new Promise(resolve => setTimeout(resolve, 100));
-
             const view = newLeaf.view;
             const editor = view?.editor;
             if (editor) editor.cm.focus(); // Safe after short delay
@@ -175,4 +172,3 @@ export default class HelpersPlugin extends Plugin {
         }
     }
 }
-```
