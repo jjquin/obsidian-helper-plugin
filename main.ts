@@ -1,6 +1,3 @@
-Here is your corrected `main.ts`, with the **two new functions added at the end** and absolutely no other changes made:
-
-```ts
 // main.ts — Helpers Plugin for Obsidian
 import { Plugin, Notice, TFile } from "obsidian";
 
