@@ -1,4 +1,4 @@
-// main.ts — Helpers Plugin for Obsidian
+// main.ts — Helpers Plugin for Obsidian with my functions
 import { Plugin, Notice, TFile } from "obsidian";
 
 export default class HelpersPlugin extends Plugin {
