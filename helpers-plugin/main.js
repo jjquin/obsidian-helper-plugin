@@ -34,7 +34,9 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
       calculateDuration: this.calculateDuration.bind(this),
       createUniqueId: this.createUniqueId.bind(this),
       openFileInTab: this.openFileInTab.bind(this),
-      getNoteType: this.getNoteType.bind(this)
+      getNoteType: this.getNoteType.bind(this),
+      getActiveNoteContext: this.getActiveNoteContext.bind(this),
+      cleanLinkName: this.cleanLinkName.bind(this)
     };
   }
   onunload() {
@@ -175,5 +177,31 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
       new import_obsidian.Notice("Error reading note type options.");
       return null;
     }
+  }
+  getActiveNoteContext(mode = "both") {
+    const app = this.app;
+    const activeFile = app.workspace.getActiveFile();
+    if (!activeFile) {
+      new import_obsidian.Notice("No active file.");
+      return null;
+    }
+    const context = { activeFile };
+    if (mode === "frontmatter" || mode === "both") {
+      context.frontmatter = app.metadataCache.getFileCache(activeFile)?.frontmatter || {};
+    }
+    if (mode === "contents" || mode === "both") {
+      context.contents = app.vault.read(activeFile);
+    }
+    return context;
+  }
+  cleanLink(linkText) {
+    if (!linkText) return null;
+    const clean = linkText.replace(/^\[\[/, "").replace(/\]\]$/, "");
+    const [filename, displayRaw] = clean.split("|");
+    const display = displayRaw || filename;
+    return {
+      filename: filename.trim(),
+      display: display.trim()
+    };
   }
 };
