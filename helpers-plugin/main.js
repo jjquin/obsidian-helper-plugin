@@ -171,6 +171,7 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
         new import_obsidian.Notice("noteTypeOptions.json is not formatted correctly.");
         return null;
       }
+      if (!key && !value) return noteTypes;
       return noteTypes.find((item) => item[key] === value) || null;
     } catch (err) {
       console.error("Failed to read or parse noteTypeOptions.json", err);
