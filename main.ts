@@ -13,7 +13,9 @@ export default class HelpersPlugin extends Plugin {
                     calculateDuration: this.calculateDuration.bind(this),
                     createUniqueId: this.createUniqueId.bind(this),
                     openFileInTab: this.openFileInTab.bind(this),
-                    getNoteType: this.getNoteType.bind(this)
+                    getNoteType: this.getNoteType.bind(this),
+                    getActiveNoteContext: this.getActiveNoteContext.bind(this),
+                    cleanLinkName: this.cleanLinkName.bind(this)
         };
     }
 
@@ -195,4 +197,39 @@ export default class HelpersPlugin extends Plugin {
             return null;
         }
     }
+
+    getActiveNoteContext(mode: string = "both"): any | null {
+        const app = this.app;
+        const activeFile = app.workspace.getActiveFile();
+        if (!activeFile) {
+            new Notice("No active file.");
+            return null;
+        }
+
+        const context: any = { activeFile };
+
+        if (mode === "frontmatter" || mode === "both") {
+            context.frontmatter = app.metadataCache.getFileCache(activeFile)?.frontmatter || {};
+        }
+
+        if (mode === "contents" || mode === "both") {
+            context.contents = app.vault.read(activeFile); // returns a Promise
+        }
+
+        return context;
+    }
+
+    cleanLink(linkText: string): { filename: string, display: string } | null {
+        if (!linkText) return null;
+
+        const clean = linkText.replace(/^\[\[/, "").replace(/\]\]$/, "");
+        const [filename, displayRaw] = clean.split("|");
+        const display = displayRaw || filename;
+
+        return {
+            filename: filename.trim(),
+            display: display.trim()
+        };
+    }
+
 }
