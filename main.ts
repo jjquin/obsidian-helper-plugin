@@ -175,7 +175,7 @@ export default class HelpersPlugin extends Plugin {
         }
     }
 
-    async getNoteType(key: string, value: string): Promise<any | null> {
+    async getNoteType(key?: string, value?: string): Promise<any | null> {
         const file = this.app.vault.getAbstractFileByPath("Toolbox/Lookups/noteTypeOptions.json");
         if (!file) {
             new Notice("noteTypeOptions.json not found.");
@@ -189,6 +189,9 @@ export default class HelpersPlugin extends Plugin {
                 new Notice("noteTypeOptions.json is not formatted correctly.");
                 return null;
             }
+
+            // If no key/value passed, return all
+            if (!key && !value) return noteTypes;
 
             return noteTypes.find((item: any) => item[key] === value) || null;
         } catch (err) {
