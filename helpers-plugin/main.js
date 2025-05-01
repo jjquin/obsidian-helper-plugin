@@ -24,19 +24,25 @@ __export(main_exports, {
 module.exports = __toCommonJS(main_exports);
 var import_obsidian = require("obsidian");
 var HelpersPlugin = class extends import_obsidian.Plugin {
+  sharedValues = {};
   async onload() {
     console.log("Helpers Plugin loaded");
     this.app.plugins.plugins["helpers-plugin"] = {
       sanitizeTime: this.sanitizeTime.bind(this),
-      formatLink: this.formatLink.bind(this),
-      formatWebLink: this.formatWebLink.bind(this),
-      moveFile: this.moveFile.bind(this),
       calculateDuration: this.calculateDuration.bind(this),
       createUniqueId: this.createUniqueId.bind(this),
+      formatLinks: this.formatLinks.bind(this),
+      formatWebLinks: this.formatWebLinks.bind(this),
+      cleanLink: this.cleanLink.bind(this),
+      setTemplateValues: this.setTemplateValues.bind(this),
+      getTemplateValues: this.getTemplateValues.bind(this),
+      moveFile: this.moveFile.bind(this),
       openFileInTab: this.openFileInTab.bind(this),
+      openModalForm: this.openModalForm.bind(this),
       getNoteType: this.getNoteType.bind(this),
-      getActiveNoteContext: this.getActiveNoteContext.bind(this),
-      cleanLinkName: this.cleanLinkName.bind(this)
+      getNoteContext: this.getNoteContext.bind(this),
+      getJsonObject: this.getJsonObject.bind(this),
+      createDailyLogEntry: this.createDailyLogEntry.bind(this)
     };
   }
   onunload() {
@@ -49,36 +55,84 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
     const momentTime = moment(inputTime, ["h:mm A", "HH:mm", "h:mm"], true);
     return !inputTime || !momentTime.isValid() ? currentTime : momentTime.format("HH:mm");
   }
-  formatLink(value) {
-    const app = this.app;
-    const file = app.metadataCache.getFirstLinkpathDest(value, "");
-    if (!file) return `"[[${value}]]"`;
-    const extension = file.extension?.toLowerCase();
-    if (extension !== "md") {
-      const isImage = ["png", "jpg", "jpeg", "gif", "svg"].includes(extension);
-      const prefix = isImage ? "!" : "";
-      return `"${prefix}[[${file.name}]]"`;
+  calculateDuration(startDate, startTime, endDate, endTime) {
+    const moment = window.moment;
+    const startDateTime = moment(`${startDate} ${startTime}`, "YYYY-MM-DD HH:mm");
+    let endDateTime = moment(`${endDate} ${endTime}`, "YYYY-MM-DD HH:mm");
+    if (endDateTime.isBefore(startDateTime)) {
+      endDateTime = endDateTime.add(1, "day");
     }
-    const title = app.metadataCache.getFileCache(file)?.frontmatter?.Title;
-    if (title && title.trim() && title !== file.basename) {
-      return `"[[${file.basename}|${title}]]"`;
-    }
-    return `"[[${file.basename}]]"`;
+    const durationMinutes = endDateTime.diff(startDateTime, "minutes");
+    const hours = Math.floor(durationMinutes / 60);
+    const minutes = durationMinutes % 60;
+    return `${hours}:${minutes.toString().padStart(2, "0")}`;
   }
-  formatWebLink(url) {
-    if (!url) return "";
-    try {
-      const cleanUrl = url.startsWith("http") ? url : `https://${url}`;
-      const parsed = new URL(cleanUrl);
-      let hostname = parsed.hostname.replace(/^www\./, "");
-      const parts = hostname.split(".");
-      const domain = parts.length > 2 ? parts.slice(-2, -1)[0] : parts[0];
-      const displayName = domain.charAt(0).toUpperCase() + domain.slice(1);
-      return `"[${displayName}](${url})"`;
-    } catch (e) {
-      console.warn("Invalid URL passed to formatWebLink:", url);
-      return url;
+  createUniqueId(prefix) {
+    const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let num = parseInt(window.moment().format("X"));
+    let result = "";
+    do {
+      result = chars[num % 62] + result;
+      num = Math.floor(num / 62);
+    } while (num > 0);
+    const idPart = result;
+    const prefixPart = prefix ? `${prefix}-` : "";
+    return `${prefixPart}${idPart}`;
+  }
+  formatLinks(value, forFrontmatter = false) {
+    const app = this.app;
+    const wrap = (s) => forFrontmatter ? s : `${s}`;
+    const format = (v) => {
+      const stripped = typeof v === "string" ? v.replace(/^"|"$/g, "") : "";
+      const file = app.metadataCache.getFirstLinkpathDest(stripped, "");
+      if (!file) return wrap(`[[${stripped}]]`);
+      const ext = file.extension?.toLowerCase();
+      if (ext && ext !== "md") {
+        const prefix = ["png", "jpg", "jpeg", "gif", "svg"].includes(ext) ? "!" : "";
+        return wrap(`${prefix}[[${file.name}]]`);
+      }
+      const title = app.metadataCache.getFileCache(file)?.frontmatter?.Title;
+      return wrap(title && title.trim() && title !== file.basename ? `[[${file.basename}|${title}]]` : `[[${file.basename}]]`);
+    };
+    return Array.isArray(value) ? value.map(format).filter(Boolean) : format(value);
+  }
+  formatWebLinks(input) {
+    if (!input) return "";
+    const format = (url) => {
+      if (!url) return "";
+      try {
+        const cleanUrl = url.startsWith("http") ? url : `https://${url}`;
+        const parsed = new URL(cleanUrl);
+        const host = parsed.hostname.replace(/^www\./, "");
+        const domain = host.split(".")[0];
+        return `[${domain.charAt(0).toUpperCase() + domain.slice(1)}](${url})`;
+      } catch (e) {
+        return url;
+      }
+    };
+    if (typeof input === "string") {
+      return input.includes("\n") ? input.split("\n").map((line) => format(line.trim())) : format(input);
     }
+    if (Array.isArray(input)) return input.map((url) => format(url.trim()));
+    return "";
+  }
+  cleanLink(linkText) {
+    if (!linkText) return null;
+    const clean = linkText.replace(/^\[\[/, "").replace(/\]\]$/, "");
+    const [filename, displayRaw] = clean.split("|");
+    const display = displayRaw || filename;
+    return {
+      filename: filename.trim(),
+      display: display.trim()
+    };
+  }
+  setTemplateValues(data) {
+    this.sharedValues = { ...data };
+  }
+  getTemplateValues(clear = true) {
+    const result = { ...this.sharedValues };
+    if (clear) this.sharedValues = {};
+    return Object.keys(result).length ? result : null;
   }
   async moveFile(currentPath, newTitle, newFolder) {
     const app = this.app;
@@ -110,30 +164,6 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
       return null;
     }
   }
-  calculateDuration(startDate, startTime, endDate, endTime) {
-    const moment = window.moment;
-    const startDateTime = moment(`${startDate} ${startTime}`, "YYYY-MM-DD HH:mm");
-    let endDateTime = moment(`${endDate} ${endTime}`, "YYYY-MM-DD HH:mm");
-    if (endDateTime.isBefore(startDateTime)) {
-      endDateTime = endDateTime.add(1, "day");
-    }
-    const durationMinutes = endDateTime.diff(startDateTime, "minutes");
-    const hours = Math.floor(durationMinutes / 60);
-    const minutes = durationMinutes % 60;
-    return `${hours}:${minutes.toString().padStart(2, "0")}`;
-  }
-  createUniqueId(prefix) {
-    const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    let num = window.moment().format("X");
-    let result = "";
-    do {
-      result = chars[num % 62] + result;
-      num = Math.floor(num / 62);
-    } while (num > 0);
-    const idPart = result;
-    const prefixPart = prefix ? `${prefix}-` : "";
-    return `\u{1F194} ${prefixPart}${idPart}`;
-  }
   async openFileInTab(path) {
     const app = this.app;
     const leafs = app.workspace.getLeavesOfType("markdown");
@@ -158,6 +188,19 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
       new import_obsidian.Notice(`File not found: ${path}`);
     }
   }
+  async openModalForm({ formName, defaultValues = {}, fileToDelete = null }) {
+    const app = this.app;
+    const modal = app.plugins.plugins.modalforms.api;
+    const file = typeof fileToDelete === "string" ? app.vault.getAbstractFileByPath(fileToDelete) : fileToDelete;
+    const result = await modal.openForm(formName, { values: defaultValues });
+    if (result?.status === "cancelled") {
+      if (file && !file.path.startsWith("Toolbox/Templates")) {
+        await app.vault.trash(file, true);
+      }
+      return null;
+    }
+    return result;
+  }
   async getNoteType(key, value) {
     const file = this.app.vault.getAbstractFileByPath("Toolbox/Lookups/noteTypeOptions.json");
     if (!file) {
@@ -179,30 +222,33 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
       return null;
     }
   }
-  getActiveNoteContext(mode = "both") {
+  async getNoteContext(path = null, mode = "frontmatter") {
+    const file = path ? this.app.vault.getAbstractFileByPath(path) : this.app.workspace.getActiveFile();
+    if (!file) return { activeFile: null };
+    const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter || {};
+    if (mode === "frontmatter") {
+      return { file, frontmatter };
+    }
+    const contents = await this.app.vault.read(file);
+    return { file, frontmatter, contents };
+  }
+  async getJsonObject(filepath, key = null) {
     const app = this.app;
-    const activeFile = app.workspace.getActiveFile();
-    if (!activeFile) {
-      new import_obsidian.Notice("No active file.");
+    try {
+      const raw = await app.vault.adapter.read(filepath);
+      const json = JSON.parse(raw);
+      return key ? json[key] ?? null : json;
+    } catch (e) {
+      console.error("Failed to read JSON config", filepath, e);
       return null;
     }
-    const context = { activeFile };
-    if (mode === "frontmatter" || mode === "both") {
-      context.frontmatter = app.metadataCache.getFileCache(activeFile)?.frontmatter || {};
-    }
-    if (mode === "contents" || mode === "both") {
-      context.contents = app.vault.read(activeFile);
-    }
-    return context;
   }
-  cleanLink(linkText) {
-    if (!linkText) return null;
-    const clean = linkText.replace(/^\[\[/, "").replace(/\]\]$/, "");
-    const [filename, displayRaw] = clean.split("|");
-    const display = displayRaw || filename;
-    return {
-      filename: filename.trim(),
-      display: display.trim()
-    };
+  async createDailyLogEntry(api, logLine, dateString = null) {
+    const moment = window.moment;
+    const date = dateString || moment().format("YYYY-MM-DD");
+    await api.executeChoice("Daily Journal Capture", {
+      logLine,
+      logDate: date
+    });
   }
 };
