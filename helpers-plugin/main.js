@@ -84,6 +84,7 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
     const wrap = (s) => suppressQuotes ? s : `"${s}"`;
     const format = (v) => {
       const stripped = typeof v === "string" ? v.replace(/^"|"$/g, "") : "";
+      if (!stripped.trim()) return null;
       const file = app.metadataCache.getFirstLinkpathDest(stripped, "");
       if (!file) return wrap(`[[${stripped}]]`);
       const ext = file.extension?.toLowerCase();
@@ -94,7 +95,15 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
       const title = app.metadataCache.getFileCache(file)?.frontmatter?.Title;
       return wrap(title && title.trim() && title !== file.basename ? `[[${file.basename}|${title}]]` : `[[${file.basename}]]`);
     };
-    return Array.isArray(value) ? value.map(format).filter(Boolean) : format(value);
+    if (typeof value === "string") {
+      return value.trim() ? format(value) : null;
+    }
+    if (Array.isArray(value)) {
+      const filtered = value.map((v) => typeof v === "string" ? v.trim() : "").filter(Boolean);
+      if (filtered.length === 0) return null;
+      return filtered.map(format).filter(Boolean);
+    }
+    return null;
   }
   formatWebLinks(input, suppressQuotes = false) {
     if (!input) return "";
