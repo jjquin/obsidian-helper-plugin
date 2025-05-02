@@ -72,12 +72,14 @@ export default class HelpersPlugin extends Plugin {
         return `${prefixPart}${idPart}`;
     }
 
-    formatLinks(value: string | string[], suppressQuotes = false): string | string[] {
+    formatLinks(value: string | string[], suppressQuotes = false): string | string[] | null {
         const app = this.app;
         const wrap = (s: string) => suppressQuotes ? s : `"${s}"`;
 
         const format = (v: string) => {
             const stripped = typeof v === "string" ? v.replace(/^"|"$/g, "") : "";
+            if (!stripped.trim()) return null;
+
             const file = app.metadataCache.getFirstLinkpathDest(stripped, "");
             if (!file) return wrap(`[[${stripped}]]`);
 
@@ -93,7 +95,17 @@ export default class HelpersPlugin extends Plugin {
             : `[[${file.basename}]]`);
         };
 
-        return Array.isArray(value) ? value.map(format).filter(Boolean) : format(value);
+        if (typeof value === "string") {
+            return value.trim() ? format(value) : null;
+        }
+
+        if (Array.isArray(value)) {
+            const filtered = value.map(v => typeof v === "string" ? v.trim() : "").filter(Boolean);
+            if (filtered.length === 0) return null;
+            return filtered.map(format).filter(Boolean);
+        }
+
+        return null;
     }
 
     formatWebLinks(input: string | string[], suppressQuotes = false): string | string[] {
