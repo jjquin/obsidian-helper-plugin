@@ -79,9 +79,9 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
     const prefixPart = prefix ? `${prefix}-` : "";
     return `${prefixPart}${idPart}`;
   }
-  formatLinks(value, forFrontmatter = false) {
+  formatLinks(value, useApi = false) {
     const app = this.app;
-    const wrap = (s) => forFrontmatter ? s : `"${s}"`;
+    const wrap = (s) => useApi ? s : `"${s}"`;
     const format = (v) => {
       const stripped = typeof v === "string" ? v.replace(/^"|"$/g, "") : "";
       const file = app.metadataCache.getFirstLinkpathDest(stripped, "");
@@ -96,8 +96,9 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
     };
     return Array.isArray(value) ? value.map(format).filter(Boolean) : format(value);
   }
-  formatWebLinks(input) {
+  formatWebLinks(input, useApi = false) {
     if (!input) return "";
+    const wrap = (s) => useApi ? s : `"${s}"`;
     const format = (url) => {
       if (!url) return "";
       try {
@@ -105,9 +106,9 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
         const parsed = new URL(cleanUrl);
         const host = parsed.hostname.replace(/^www\./, "");
         const domain = host.split(".")[0];
-        return `[${domain.charAt(0).toUpperCase() + domain.slice(1)}](${url})`;
+        return wrap(`[${domain.charAt(0).toUpperCase() + domain.slice(1)}](${url})`);
       } catch (e) {
-        return url;
+        return wrap(url);
       }
     };
     if (typeof input === "string") {
