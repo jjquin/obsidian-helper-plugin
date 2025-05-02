@@ -79,9 +79,9 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
     const prefixPart = prefix ? `${prefix}-` : "";
     return `${prefixPart}${idPart}`;
   }
-  formatLinks(value, useApi = false) {
+  formatLinks(value, suppressQuotes = false) {
     const app = this.app;
-    const wrap = (s) => useApi ? s : `"${s}"`;
+    const wrap = (s) => suppressQuotes ? s : `"${s}"`;
     const format = (v) => {
       const stripped = typeof v === "string" ? v.replace(/^"|"$/g, "") : "";
       const file = app.metadataCache.getFirstLinkpathDest(stripped, "");
@@ -96,9 +96,9 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
     };
     return Array.isArray(value) ? value.map(format).filter(Boolean) : format(value);
   }
-  formatWebLinks(input, useApi = false) {
+  formatWebLinks(input, suppressQuotes = false) {
     if (!input) return "";
-    const wrap = (s) => useApi ? s : `"${s}"`;
+    const wrap = (s) => suppressQuotes ? s : `"${s}"`;
     const format = (url) => {
       if (!url) return "";
       try {
