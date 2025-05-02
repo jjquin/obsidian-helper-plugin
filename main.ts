@@ -72,9 +72,9 @@ export default class HelpersPlugin extends Plugin {
         return `${prefixPart}${idPart}`;
     }
 
-    formatLinks(value: string | string[], forFrontmatter = false): string | string[] {
+    formatLinks(value: string | string[], useApi = false): string | string[] {
         const app = this.app;
-        const wrap = (s: string) => forFrontmatter ? s : `"${s}"`;
+        const wrap = (s: string) => useApi ? s : `"${s}"`;
 
         const format = (v: string) => {
             const stripped = typeof v === "string" ? v.replace(/^"|"$/g, "") : "";
@@ -89,15 +89,17 @@ export default class HelpersPlugin extends Plugin {
 
             const title = app.metadataCache.getFileCache(file)?.frontmatter?.Title;
             return wrap(title && title.trim() && title !== file.basename
-                ? `[[${file.basename}|${title}]]`
-                : `[[${file.basename}]]`);
+            ? `[[${file.basename}|${title}]]`
+            : `[[${file.basename}]]`);
         };
 
         return Array.isArray(value) ? value.map(format).filter(Boolean) : format(value);
     }
 
-    formatWebLinks(input: string | string[]): string | string[] {
+    formatWebLinks(input: string | string[], useApi = false): string | string[] {
         if (!input) return "";
+        const wrap = (s: string) => useApi ? s : `"${s}"`;
+
         const format = (url: string) => {
             if (!url) return "";
             try {
@@ -105,9 +107,9 @@ export default class HelpersPlugin extends Plugin {
                 const parsed = new URL(cleanUrl);
                 const host = parsed.hostname.replace(/^www\./, "");
                 const domain = host.split('.')[0];
-                return `[${domain.charAt(0).toUpperCase() + domain.slice(1)}](${url})`;
+                return wrap(`[${domain.charAt(0).toUpperCase() + domain.slice(1)}](${url})`);
             } catch (e) {
-                return url;
+                return wrap(url);
             }
         };
 
