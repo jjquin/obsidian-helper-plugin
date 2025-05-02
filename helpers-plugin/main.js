@@ -81,7 +81,7 @@ var HelpersPlugin = class extends import_obsidian.Plugin {
   }
   formatLinks(value, forFrontmatter = false) {
     const app = this.app;
-    const wrap = (s) => forFrontmatter ? s : `${s}`;
+    const wrap = (s) => forFrontmatter ? s : `"${s}"`;
     const format = (v) => {
       const stripped = typeof v === "string" ? v.replace(/^"|"$/g, "") : "";
       const file = app.metadataCache.getFirstLinkpathDest(stripped, "");
