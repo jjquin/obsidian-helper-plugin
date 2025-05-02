@@ -72,9 +72,9 @@ export default class HelpersPlugin extends Plugin {
         return `${prefixPart}${idPart}`;
     }
 
-    formatLinks(value: string | string[], useApi = false): string | string[] {
+    formatLinks(value: string | string[], suppressQuotes = false): string | string[] {
         const app = this.app;
-        const wrap = (s: string) => useApi ? s : `"${s}"`;
+        const wrap = (s: string) => suppressQuotes ? s : `"${s}"`;
 
         const format = (v: string) => {
             const stripped = typeof v === "string" ? v.replace(/^"|"$/g, "") : "";
@@ -96,9 +96,9 @@ export default class HelpersPlugin extends Plugin {
         return Array.isArray(value) ? value.map(format).filter(Boolean) : format(value);
     }
 
-    formatWebLinks(input: string | string[], useApi = false): string | string[] {
+    formatWebLinks(input: string | string[], suppressQuotes = false): string | string[] {
         if (!input) return "";
-        const wrap = (s: string) => useApi ? s : `"${s}"`;
+        const wrap = (s: string) => suppressQuotes ? s : `"${s}"`;
 
         const format = (url: string) => {
             if (!url) return "";
