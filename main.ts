@@ -74,7 +74,7 @@ export default class HelpersPlugin extends Plugin {
 
     formatLinks(value: string | string[], forFrontmatter = false): string | string[] {
         const app = this.app;
-        const wrap = (s: string) => forFrontmatter ? s : `${s}`;
+        const wrap = (s: string) => forFrontmatter ? s : `"${s}"`;
 
         const format = (v: string) => {
             const stripped = typeof v === "string" ? v.replace(/^"|"$/g, "") : "";
